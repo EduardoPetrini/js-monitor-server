@@ -35,10 +35,10 @@
       </header>
       <main>
         <div class="process-details">
-          <span class="span-details">Name</span>
-          <span class="span-details">Args</span>
-          <span class="span-details">CPU</span>
-          <span class="span-details">Memory</span>
+          <span id="nameBox" class="span-details">Name</span>
+          <span id="argsBox" class="span-details">Args</span>
+          <span id="cpuBox" class="span-details">CPU</span>
+          <span id="memBox" class="span-details">Memory</span>
         </div>
         <div class="process-memory-chart">
           <canvas id="memChart"></canvas>
@@ -57,83 +57,90 @@
           labels: [],
           datasets: [
             {
-              id:'heapTotal',
+              id: 'heapTotal',
               label: 'Heap Total',
               data: [],
-              borderWidth: 1,
             },
             {
-              id:'heapUsed',
+              id: 'heapUsed',
               label: 'Heap Used',
               data: [],
-              borderWidth: 1,
             },
             {
-              id:'rss',
+              id: 'rss',
               label: 'RSS',
               data: [],
-              borderWidth: 1,
             },
             {
-              id:'arrayBuffers',
+              id: 'arrayBuffers',
               label: 'Array Buffers',
               data: [],
-              borderWidth: 1,
             },
             {
-              id:'external',
+              id: 'external',
               label: 'External',
               data: [],
-              borderWidth: 1,
             },
           ],
         },
         options: {
-          animation: false,
-          
+          animation: {
+            duration: 500,
+            easing: 'easeOutCubic',
+            y: { duration: 0 },
+          },
+          responsive: true,
+          interaction: {
+            mode: 'nearest',
+            axis: 'x',
+            intersect: false,
+          },
+          elements: {
+            line: {
+              tension: 0.4,
+              fill: true,
+              borderWidth: 1,
+            },
+            point: {
+              radius: 0
+            }
+          },
           scales: {
             y: {
               beginAtZero: false,
+              title: {
+                display: true,
+                text: 'MB',
+              },
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Timeline',
+              },
             },
           },
         },
       });
 
-      function getRandomNum() {
-        const num = Math.random() * 100;
-        const numFormat = Math.round(num * 100) / 100;
-        return numFormat;
-      }
-
       let index = 0;
-      // setInterval(() => {
-      //   index++;
-      //   console.log('index', index)
-      //   chart.data.labels.push(index);
-      //   chart.data.datasets.forEach(dataset => {
-      //     const value = getRandomNum();
-      //     console.log('Adding', value, 'to', dataset.id)
-      //     dataset.data.push(value)
-      //   });
-
-      //   chart.update();
-      // }, 1000);
 
       const socket = io();
       socket.on('update', data => {
-        const { heapTotal, heapUsed, rss, arrayBuffers, external, details} = data;
-        console.log(data);
+        const { heapTotal, heapUsed, rss, arrayBuffers, external, details } = data;
 
         index++;
         chart.data.labels.push(index);
         chart.data.datasets.forEach(dataset => {
           const value = data[dataset.id];
-          console.log('Adding', value, 'to', dataset.id)
-          dataset.data.push(value)
+          dataset.data.push(value);
         });
 
+        const memBox = document.getElementById('memBox');
+        memBox.innerText = `Memory: ${rss} MB`;
+
         chart.update();
-      })
+      });
     </script>
   </body>
 </html>
