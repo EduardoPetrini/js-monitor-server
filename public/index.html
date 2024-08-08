@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JS Monitor</title>
+    <script src="/js/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        background: rgb(32, 32, 32);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: rgb(216, 211, 200);
+      }
+      header {
+        padding: 10px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid white;
+      }
+      .process-details {
+        display: flex;
+      }
+      .span-details {
+        flex: 1;
+      }
+      .process-memory-chart {
+        padding: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>The JS Resources Monitor UI</h1>
+      </header>
+      <main>
+        <div class="process-details">
+          <span class="span-details">Name</span>
+          <span class="span-details">Args</span>
+          <span class="span-details">CPU</span>
+          <span class="span-details">Memory</span>
+        </div>
+        <div class="process-memory-chart">
+          <canvas id="memChart"></canvas>
+        </div>
+        <div class="process-cpu-chart">
+          <canvas id="cpuChart"></canvas>
+        </div>
+      </main>
+    </div>
+    <script>
+      const ctx = document.getElementById('memChart');
+
+      const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              id:'heapTotal',
+              label: 'Heap Total',
+              data: [],
+              borderWidth: 1,
+            },
+            {
+              id:'heapUsed',
+              label: 'Heap Used',
+              data: [],
+              borderWidth: 1,
+            },
+            {
+              id:'rss',
+              label: 'RSS',
+              data: [],
+              borderWidth: 1,
+            },
+            {
+              id:'arrayBuffers',
+              label: 'Array Buffers',
+              data: [],
+              borderWidth: 1,
+            },
+            {
+              id:'external',
+              label: 'External',
+              data: [],
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          animation: false,
+          
+          scales: {
+            y: {
+              beginAtZero: false,
+            },
+          },
+        },
+      });
+
+      function getRandomNum() {
+        const num = Math.random() * 100;
+        const numFormat = Math.round(num * 100) / 100;
+        return numFormat;
+      }
+
+      let index = 0;
+      // setInterval(() => {
+      //   index++;
+      //   console.log('index', index)
+      //   chart.data.labels.push(index);
+      //   chart.data.datasets.forEach(dataset => {
+      //     const value = getRandomNum();
+      //     console.log('Adding', value, 'to', dataset.id)
+      //     dataset.data.push(value)
+      //   });
+
+      //   chart.update();
+      // }, 1000);
+
+      const socket = io();
+      socket.on('update', data => {
+        const { heapTotal, heapUsed, rss, arrayBuffers, external, details} = data;
+        console.log(data);
+
+        index++;
+        chart.data.labels.push(index);
+        chart.data.datasets.forEach(dataset => {
+          const value = data[dataset.id];
+          console.log('Adding', value, 'to', dataset.id)
+          dataset.data.push(value)
+        });
+
+        chart.update();
+      })
+    </script>
+  </body>
+</html>
