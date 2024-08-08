@@ -32,6 +32,11 @@ httpServer.listen(PORT, () => {
 
 io.on('connection', socket => {
   logger.info(`Client connected ${socket.id}`);
-  monitor.startMonitor();
-  monitor.on('update',data => io.emit('update', data))
+
+  socket.on('disconnect', () => {
+    logger.info(`Client disconnected ${socket.id}`);
+  });
 });
+
+monitor.startMonitor();
+monitor.on('update', data => io.emit('update', data));
