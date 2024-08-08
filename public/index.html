@@ -187,16 +187,24 @@
         const { user, system, heapTotal, heapUsed, rss, arrayBuffers, external, details } = data;
 
         index++;
+        const isTooBig = index > 2000 ? true : false;
+
         memChart.data.labels.push(index);
+        if (isTooBig) memChart.data.labels.shift();
+
         memChart.data.datasets.forEach(dataset => {
           const value = data[dataset.id];
           dataset.data.push(value);
+          if (isTooBig) dataset.data.shift();
         });
 
         cpuChart.data.labels.push(index);
+        if (isTooBig) cpuChart.data.labels.shift();
+
         cpuChart.data.datasets.forEach(dataset => {
           const value = data[dataset.id];
           dataset.data.push(value);
+          if (isTooBig) dataset.data.shift();
         });
 
         const memBox = document.getElementById('memBox');
