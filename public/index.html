@@ -19,11 +19,13 @@
       }
       .process-details {
         display: flex;
+        margin-bottom: 10px;
       }
       .span-details {
         flex: 1;
       }
-      .process-memory-chart, .process-cpu-chart {
+      .process-memory-chart,
+      .process-cpu-chart {
         padding: 10px;
         height: 400px;
       }
@@ -52,6 +54,31 @@
     <script>
       const memCtx = document.getElementById('memChart');
       const cpuCtx = document.getElementById('cpuChart');
+
+      const chartOptions = {
+        maintainAspectRatio: false,
+        animation: {
+          duration: 500,
+          easing: 'easeOutCubic',
+          y: { duration: 0 },
+        },
+        responsive: true,
+        interaction: {
+          mode: 'nearest',
+          axis: 'x',
+          intersect: false,
+        },
+        elements: {
+          line: {
+            tension: 0.4,
+            fill: true,
+            borderWidth: 1,
+          },
+          point: {
+            radius: 0,
+          },
+        },
+      };
 
       const memChart = new Chart(memCtx, {
         type: 'line',
@@ -86,27 +113,12 @@
           ],
         },
         options: {
-          maintainAspectRatio: false,
-          animation: {
-            duration: 500,
-            easing: 'easeOutCubic',
-            y: { duration: 0 },
-          },
-          responsive: true,
-          interaction: {
-            mode: 'nearest',
-            axis: 'x',
-            intersect: false,
-          },
-          elements: {
-            line: {
-              tension: 0.4,
-              fill: true,
-              borderWidth: 1,
+          ...chartOptions,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Memory Consumption',
             },
-            point: {
-              radius: 0
-            }
           },
           scales: {
             y: {
@@ -144,27 +156,12 @@
           ],
         },
         options: {
-          maintainAspectRatio: false,
-          animation: {
-            duration: 500,
-            easing: 'easeOutCubic',
-            y: { duration: 0 },
-          },
-          responsive: true,
-          interaction: {
-            mode: 'nearest',
-            axis: 'x',
-            intersect: false,
-          },
-          elements: {
-            line: {
-              tension: 0.4,
-              fill: true,
-              borderWidth: 1,
+          ...chartOptions,
+          plugins: {
+            title: {
+              display: true,
+              text: 'CPU Consumption',
             },
-            point: {
-              radius: 0
-            }
           },
           scales: {
             y: {
