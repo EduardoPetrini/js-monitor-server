@@ -27,9 +27,11 @@ export class Monitor extends EventEmitter {
 
   startMonitor() {
     this.stopMonitor();
+    let previousCpu = process.cpuUsage();
 
     this.currentInterval = setInterval(() => {
       const { heapTotal, heapUsed, rss, arrayBuffers, external } = process.memoryUsage();
+      previousCpu = process.cpuUsage(previousCpu);
       const details = process.execArgv;
 
       const heapTotalMb = toMb(heapTotal);
@@ -38,7 +40,7 @@ export class Monitor extends EventEmitter {
       const arrayBuffersMb = toMb(arrayBuffers);
       const externalMb = toMb(external);
 
-      this.emit('update', { heapTotal: heapTotalMb, heapUsed: heapUsedMb, rss: rssMb, arrayBuffers: arrayBuffersMb, external: externalMb, details });
+      this.emit('update', { ...previousCpu, heapTotal: heapTotalMb, heapUsed: heapUsedMb, rss: rssMb, arrayBuffers: arrayBuffersMb, external: externalMb, details });
     }, this.intervalMs);
   }
 }

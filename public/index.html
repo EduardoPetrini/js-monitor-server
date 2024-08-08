@@ -23,8 +23,9 @@
       .span-details {
         flex: 1;
       }
-      .process-memory-chart {
+      .process-memory-chart, .process-cpu-chart {
         padding: 10px;
+        height: 400px;
       }
     </style>
   </head>
@@ -49,9 +50,10 @@
       </main>
     </div>
     <script>
-      const ctx = document.getElementById('memChart');
+      const memCtx = document.getElementById('memChart');
+      const cpuCtx = document.getElementById('cpuChart');
 
-      const chart = new Chart(ctx, {
+      const memChart = new Chart(memCtx, {
         type: 'line',
         data: {
           labels: [],
@@ -84,6 +86,7 @@
           ],
         },
         options: {
+          maintainAspectRatio: false,
           animation: {
             duration: 500,
             easing: 'easeOutCubic',
@@ -123,15 +126,78 @@
         },
       });
 
+      const cpuChart = new Chart(cpuCtx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              id: 'user',
+              label: 'User Total',
+              data: [],
+            },
+            {
+              id: 'system',
+              label: 'System',
+              data: [],
+            },
+          ],
+        },
+        options: {
+          maintainAspectRatio: false,
+          animation: {
+            duration: 500,
+            easing: 'easeOutCubic',
+            y: { duration: 0 },
+          },
+          responsive: true,
+          interaction: {
+            mode: 'nearest',
+            axis: 'x',
+            intersect: false,
+          },
+          elements: {
+            line: {
+              tension: 0.4,
+              fill: true,
+              borderWidth: 1,
+            },
+            point: {
+              radius: 0
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: false,
+              title: {
+                display: true,
+                text: 'MS',
+              },
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Timeline',
+              },
+            },
+          },
+        },
+      });
       let index = 0;
 
       const socket = io();
       socket.on('update', data => {
-        const { heapTotal, heapUsed, rss, arrayBuffers, external, details } = data;
+        const { user, system, heapTotal, heapUsed, rss, arrayBuffers, external, details } = data;
 
         index++;
-        chart.data.labels.push(index);
-        chart.data.datasets.forEach(dataset => {
+        memChart.data.labels.push(index);
+        memChart.data.datasets.forEach(dataset => {
+          const value = data[dataset.id];
+          dataset.data.push(value);
+        });
+
+        cpuChart.data.labels.push(index);
+        cpuChart.data.datasets.forEach(dataset => {
           const value = data[dataset.id];
           dataset.data.push(value);
         });
@@ -139,7 +205,11 @@
         const memBox = document.getElementById('memBox');
         memBox.innerText = `Memory: ${rss} MB`;
 
-        chart.update();
+        const cpuBox = document.getElementById('cpuBox');
+        cpuBox.innerText = `CPU: ${user} Ms`;
+
+        memChart.update();
+        cpuChart.update();
       });
     </script>
   </body>
