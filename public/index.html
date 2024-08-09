@@ -6,11 +6,14 @@
     <title>JS Monitor</title>
     <script src="/js/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="/js/buildApexCharts.js"></script>
     <style>
       body {
         background: rgb(32, 32, 32);
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         color: rgb(216, 211, 200);
+        fill: rgb(216, 211, 200);
       }
       header {
         padding: 10px;
@@ -27,7 +30,6 @@
       .process-memory-chart,
       .process-cpu-chart {
         padding: 10px;
-        height: 400px;
       }
     </style>
   </head>
@@ -44,177 +46,30 @@
           <span id="memBox" class="span-details">Memory</span>
         </div>
         <div class="process-memory-chart">
-          <canvas id="memChart"></canvas>
+          <div id="memChart"></div>
         </div>
         <div class="process-cpu-chart">
-          <canvas id="cpuChart"></canvas>
+          <div id="cpuChart"></div>
         </div>
       </main>
     </div>
     <script>
-      const memCtx = document.getElementById('memChart');
-      const cpuCtx = document.getElementById('cpuChart');
+      const { memChart, cpuChart } = buildApexCharts();
 
-      const chartOptions = {
-        maintainAspectRatio: false,
-        animation: {
-          duration: 500,
-          easing: 'easeOutCubic',
-          y: { duration: 0 },
-        },
-        responsive: true,
-        interaction: {
-          mode: 'nearest',
-          axis: 'x',
-          intersect: false,
-        },
-        elements: {
-          line: {
-            tension: 0.4,
-            fill: true,
-            borderWidth: 1,
-          },
-          point: {
-            radius: 0,
-          },
-        },
-      };
-
-      const memChart = new Chart(memCtx, {
-        type: 'line',
-        data: {
-          labels: [],
-          datasets: [
-            {
-              id: 'heapTotal',
-              label: 'Heap Total',
-              data: [],
-            },
-            {
-              id: 'heapUsed',
-              label: 'Heap Used',
-              data: [],
-            },
-            {
-              id: 'rss',
-              label: 'RSS',
-              data: [],
-            },
-            {
-              id: 'arrayBuffers',
-              label: 'Array Buffers',
-              data: [],
-            },
-            {
-              id: 'external',
-              label: 'External',
-              data: [],
-            },
-          ],
-        },
-        options: {
-          ...chartOptions,
-          plugins: {
-            title: {
-              display: true,
-              text: 'Memory Consumption',
-            },
-          },
-          scales: {
-            y: {
-              beginAtZero: false,
-              title: {
-                display: true,
-                text: 'MB',
-              },
-            },
-            x: {
-              title: {
-                display: true,
-                text: 'Timeline',
-              },
-            },
-          },
-        },
-      });
-
-      const cpuChart = new Chart(cpuCtx, {
-        type: 'line',
-        data: {
-          labels: [],
-          datasets: [
-            {
-              id: 'user',
-              label: 'User Total',
-              data: [],
-            },
-            {
-              id: 'system',
-              label: 'System',
-              data: [],
-            },
-          ],
-        },
-        options: {
-          ...chartOptions,
-          plugins: {
-            title: {
-              display: true,
-              text: 'CPU Consumption',
-            },
-          },
-          scales: {
-            y: {
-              beginAtZero: false,
-              title: {
-                display: true,
-                text: 'MS',
-              },
-            },
-            x: {
-              title: {
-                display: true,
-                text: 'Timeline',
-              },
-            },
-          },
-        },
-      });
       let index = 0;
 
       const socket = io();
       socket.on('update', data => {
-        const { user, system, heapTotal, heapUsed, rss, arrayBuffers, external, details } = data;
-
         index++;
-        const isTooBig = index > 2000 ? true : false;
+        updateApexCharts(data, memChart, cpuChart, index);
 
-        memChart.data.labels.push(index);
-        if (isTooBig) memChart.data.labels.shift();
-
-        memChart.data.datasets.forEach(dataset => {
-          const value = data[dataset.id];
-          dataset.data.push(value);
-          if (isTooBig) dataset.data.shift();
-        });
-
-        cpuChart.data.labels.push(index);
-        if (isTooBig) cpuChart.data.labels.shift();
-
-        cpuChart.data.datasets.forEach(dataset => {
-          const value = data[dataset.id];
-          dataset.data.push(value);
-          if (isTooBig) dataset.data.shift();
-        });
+        const { user, rss } = data;
 
         const memBox = document.getElementById('memBox');
         memBox.innerText = `Memory: ${rss} MB`;
 
         const cpuBox = document.getElementById('cpuBox');
         cpuBox.innerText = `CPU: ${user} Ms`;
-
-        memChart.update();
-        cpuChart.update();
       });
     </script>
   </body>
