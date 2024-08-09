@@ -41,7 +41,6 @@
       <main>
         <div class="process-details">
           <span id="nameBox" class="span-details">Name</span>
-          <span id="argsBox" class="span-details">Args</span>
           <span id="cpuBox" class="span-details">CPU</span>
           <span id="memBox" class="span-details">Memory</span>
         </div>
@@ -63,7 +62,10 @@
         index++;
         updateApexCharts(data, memChart, cpuChart, index);
 
-        const { user, rss } = data;
+        const { user, rss, details } = data;
+
+        const nameBox = document.getElementById('nameBox');
+        nameBox.innerText = details.name;
 
         const memBox = document.getElementById('memBox');
         memBox.innerText = `Memory: ${rss} MB`;

@@ -29,10 +29,10 @@ export class Monitor extends EventEmitter {
     this.stopMonitor();
     let previousCpu = process.cpuUsage();
 
+    const details = { name: process.env.INIT_CWD };
     this.currentInterval = setInterval(() => {
       const { heapTotal, heapUsed, rss, arrayBuffers, external } = process.memoryUsage();
       previousCpu = process.cpuUsage(previousCpu);
-      const details = process.execArgv;
 
       const heapTotalMb = toMb(heapTotal);
       const heapUsedMb = toMb(heapUsed);
