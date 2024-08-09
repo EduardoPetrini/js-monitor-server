@@ -42,6 +42,15 @@ function buildApexCharts() {
     legend: {
       show: true,
     },
+    xaxis: {
+      labels: {
+        show: false,
+      },
+    },
+    tooltip: {
+      theme: 'dark',
+      followCursor: true,
+    },
   };
 
   const memOptions = {
@@ -113,28 +122,28 @@ function updateApexCharts(data, memChart, cpuChart, index) {
 
   memChart.appendData([
     {
-      data: [[index, heapTotal]],
+      data: [heapTotal],
     },
     {
-      data: [[index, heapUsed]],
+      data: [heapUsed],
     },
     {
-      data: [[index, rss]],
+      data: [rss],
     },
     {
-      data: [[index, arrayBuffers]],
+      data: [arrayBuffers],
     },
     {
-      data: [[index, external]],
+      data: [external],
     },
   ]);
 
   cpuChart.appendData([
     {
-      data: [[index, user]],
+      data: [user],
     },
     {
-      data: [[index, system]],
+      data: [system],
     },
   ]);
 }
