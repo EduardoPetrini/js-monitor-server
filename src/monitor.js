@@ -40,7 +40,13 @@ export class Monitor extends EventEmitter {
       const arrayBuffersMb = toMb(arrayBuffers);
       const externalMb = toMb(external);
 
-      this.emit('update', { cpu: { System: previousCpu.system, User: previousCpu.user }, memory: { 'Heap Total': heapTotalMb, 'Heap Used': heapUsedMb, RSS: rssMb, 'Array Buffers': arrayBuffersMb, External: externalMb }, details });
+      this.emit('update', {
+        cpu: { System: previousCpu.system, User: previousCpu.user },
+        memory: { 'Heap Total': heapTotalMb, 'Heap Used': heapUsedMb, RSS: rssMb, 'Array Buffers': arrayBuffersMb, External: externalMb },
+        mainMemory: rssMb,
+        mainCpu: previousCpu.user,
+        details,
+      });
     }, this.intervalMs);
   }
 }

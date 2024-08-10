@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="shortcut icon" href="/icon.png" type="image/x-icon">
+    <link rel="shortcut icon" href="/icon.png" type="image/x-icon" />
     <title>JS Monitor</title>
     <script src="/js/socket.io.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js" integrity="sha512-k37wQcV4v2h6jgYf5IUz1MoSKPpDs630XGSmCaCCOXxy2awgAWKHGZWr9nMyGgk3IOxA1NxdkN8r1JHgkUtMoQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -27,12 +27,9 @@
       .span-details {
         flex: 1;
       }
-      .process-memory-chart,
-      .process-cpu-chart {
-       
-      }
 
-      #memChart,  #cpuChart {
+      #memChart,
+      #cpuChart {
         width: 100%;
         height: 500px;
       }
@@ -67,16 +64,16 @@
         index++;
         updateEcharts(data, memChart, cpuChart, index);
 
-        const { user, rss, details } = data;
+        const { mainCpu, mainMemory, details } = data;
 
         const nameBox = document.getElementById('nameBox');
         nameBox.innerText = details.name;
 
         const memBox = document.getElementById('memBox');
-        memBox.innerText = `Memory: ${rss} MB`;
+        memBox.innerText = `Memory: ${mainMemory} MB`;
 
         const cpuBox = document.getElementById('cpuBox');
-        cpuBox.innerText = `CPU: ${user} Ms`;
+        cpuBox.innerText = `CPU: ${mainCpu} Ms`;
       });
     </script>
   </body>
