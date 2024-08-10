@@ -26,31 +26,25 @@ A real-time monitoring tool for JavaScript applications that tracks CPU usage an
 
 ## Installation
 
-1. Clone the repository:
+1. Install the `js-monitor-server` as dependency of your application:
    ```
-   git clone https://github.com/yourusername/js-resources-monitor.git
-   ```
-
-2. Navigate to the project directory:
-   ```
-   cd js-resources-monitor
+   npm install js-monitor-server@latest
    ```
 
-3. Install dependencies:
-   ```
-   npm install
-   ```
+
 
 ## Usage
 
-1. Start the server:
-   ```
-   npm start
+1. Import the library as dependency of your nodejs app. 
+   ```javascript
+   import 'js-monitor-server'
    ```
 
-2. Open a web browser and navigate to `http://localhost:3000` (or the port specified in your environment variables).
+2. The default web server port is `9966`. You can change it by changing the `MONITOR_PORT` environment variable in the `.env` file.
 
-3. The UI will display real-time CPU and memory usage of the monitored process.
+3. Open a web browser and navigate to [http://localhost:9966](http://localhost:9966) (or the port specified in your environment variables).
+
+4. The UI will display real-time CPU and memory usage of the monitored process.
 
 ## File Structure
 

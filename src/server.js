@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import http from 'http';
 import express from 'express';
 import cors from 'cors';
@@ -7,7 +10,7 @@ import { dirname, join } from 'path';
 import { logger } from './logger.js';
 import { Monitor } from './monitor.js';
 
-const PORT = process.env.MONITOR_PORT || 3000;
+const PORT = process.env.MONITOR_PORT || 9966;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
