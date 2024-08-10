@@ -1,29 +1,25 @@
 const chartData = {
   categories: [],
-  heapTotal: [],
-  heapUsed: [],
-  rss: [],
-  arrayBuffers: [],
-  external: [],
-  system: [],
-  user: [],
 };
+
+const colorIndex = ['#ffa600', '#ff6361', '#bc5090', '#58508d', '#003f5c'];
+
+const commonLineOptions = {
+  smooth: true,
+  type: 'line',
+
+  symbolSize: 0,
+  endLabel: {
+    show: true,
+    formatter: function (params) {
+      return params.seriesName + ': ' + params.value;
+    },
+  },
+};
+
 function buildEcharts() {
   const memChart = echarts.init(document.getElementById('memChart'), 'dark');
   const cpuChart = echarts.init(document.getElementById('cpuChart'), 'dark');
-
-  const commonLineOptions = {
-    smooth: true,
-    type: 'line',
-
-    symbolSize: 0,
-    endLabel: {
-      show: true,
-      formatter: function (params) {
-        return params.seriesName + ': ' + params.value;
-      },
-    },
-  };
 
   const memOptions = {
     title: {
@@ -58,68 +54,7 @@ function buildEcharts() {
       data: [],
     },
     yAxis: {},
-    series: [
-      {
-        name: 'Heap Total',
-        data: [],
-        itemStyle: {
-          color: '#ffa600',
-        },
-        areaStyle: {
-          color: '#ffa600',
-          opacity: 0.5,
-        },
-        ...commonLineOptions,
-      },
-      {
-        name: 'Heap Used',
-        data: [],
-        itemStyle: {
-          color: '#ff6361',
-        },
-        areaStyle: {
-          color: '#ff6361',
-          opacity: 0.5,
-        },
-        ...commonLineOptions,
-      },
-      {
-        name: 'RSS',
-        data: [],
-        itemStyle: {
-          color: '#bc5090',
-        },
-        areaStyle: {
-          color: '#bc5090',
-          opacity: 0.5,
-        },
-        ...commonLineOptions,
-      },
-      {
-        name: 'Array Buffers',
-        data: [],
-        itemStyle: {
-          color: '#58508d',
-        },
-        areaStyle: {
-          color: '#58508d',
-          opacity: 0.5,
-        },
-        ...commonLineOptions,
-      },
-      {
-        name: 'External',
-        data: [],
-        itemStyle: {
-          color: '#003f5c',
-        },
-        areaStyle: {
-          color: '#003f5c',
-          opacity: 0.5,
-        },
-        ...commonLineOptions,
-      },
-    ],
+    series: [],
   };
 
   const cpuOptions = {
@@ -155,32 +90,7 @@ function buildEcharts() {
       data: [],
     },
     yAxis: {},
-    series: [
-      {
-        name: 'User',
-        data: [],
-        itemStyle: {
-          color: '#ffa600',
-        },
-        areaStyle: {
-          color: '#ffa600',
-          opacity: 0.5,
-        },
-        ...commonLineOptions,
-      },
-      {
-        name: 'System',
-        data: [],
-        itemStyle: {
-          color: '#ff6361',
-        },
-        areaStyle: {
-          color: '#ff6361',
-          opacity: 0.5,
-        },
-        ...commonLineOptions,
-      },
-    ],
+    series: [],
   };
 
   memChart.setOption(memOptions);
@@ -190,68 +100,52 @@ function buildEcharts() {
 }
 
 function updateEcharts(data, memChart, cpuChart, index) {
-  const { heapTotal, heapUsed, rss, arrayBuffers, external, system, user } = data;
+  const { memory, cpu } = data;
+  Object.entries({ ...memory, ...cpu }).forEach(([key, value]) => {
+    if (!chartData[key]) {
+      chartData[key] = [];
+    }
+    chartData[key].push(value);
+  });
   chartData.categories.push(index);
-  chartData.heapTotal.push(heapTotal);
-  chartData.heapUsed.push(heapUsed);
-  chartData.rss.push(rss);
-  chartData.arrayBuffers.push(arrayBuffers);
-  chartData.external.push(external);
-  chartData.system.push(system);
-  chartData.user.push(user);
 
   if (index > 5000) {
-    chartData.categories.shift();
-    chartData.heapTotal.shift();
-    chartData.heapUsed.shift();
-    chartData.rss.shift();
-    chartData.arrayBuffers.shift();
-    chartData.external.shift();
-    chartData.system.shift();
-    chartData.user.shift();
+    Object.keys(chartData).forEach(key => chartData[key].shift());
   }
 
   memChart.setOption({
     xAxis: {
       data: chartData.categories,
     },
-    series: [
-      {
-        name: 'Heap Total',
-        data: chartData.heapTotal,
+    series: Object.keys(memory).map((key, index) => ({
+      name: key,
+      data: chartData[key],
+      itemStyle: {
+        color: colorIndex[index],
       },
-      {
-        name: 'Heap Used',
-        data: chartData.heapUsed,
+      areaStyle: {
+        color: colorIndex[index],
+        opacity: 0.5,
       },
-      {
-        name: 'RSS',
-        data: chartData.rss,
-      },
-      {
-        name: 'Array Buffers',
-        data: chartData.arrayBuffers,
-      },
-      {
-        name: 'External',
-        data: chartData.external,
-      },
-    ],
+      ...commonLineOptions,
+    })),
   });
 
   cpuChart.setOption({
     xAxis: {
       data: chartData.categories,
     },
-    series: [
-      {
-        name: 'System',
-        data: chartData.system,
+    series: Object.keys(cpu).map((key, index) => ({
+      name: key,
+      data: chartData[key],
+      itemStyle: {
+        color: colorIndex[index],
       },
-      {
-        name: 'User',
-        data: chartData.user,
+      areaStyle: {
+        color: colorIndex[index],
+        opacity: 0.5,
       },
-    ],
+      ...commonLineOptions,
+    })),
   });
 }
