@@ -1,16 +1,32 @@
 {
   "name": "js-monitor-server",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "",
   "main": "index.js",
   "type": "module",
+  "homepage": "https://github.com/EduardoPetrini/js-monitor-server#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EduardoPetrini/js-monitor-server.git"
+  },
+  "engines": {
+    "node": ">=0.10.3"
+  },
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js public/*",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "js",
+    "nodejs",
+    "web",
+    "memory",
+    "cpu",
+    "monitor",
+    "resources"
+  ],
+  "author": "Eduardo Petrini",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
