@@ -2,6 +2,8 @@
 
 A real-time monitoring tool for JavaScript applications that tracks CPU usage and memory consumption.
 
+![JS Monitor Server](https://github.com/EduardoPetrini/js-monitor-server/blob/2cf1ddac07fb02cd119be1efa6c10117aa50c812/docs/ss.png?raw=true)
+
 ## Table of Contents
 - [Features](#features)
 - [Prerequisites](#prerequisites)
