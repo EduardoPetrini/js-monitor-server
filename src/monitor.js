@@ -1,4 +1,5 @@
 import EventEmitter from 'events';
+import { logger } from './logger.js';
 import { toMb } from './genericFunctions.js';
 
 export class Monitor extends EventEmitter {
@@ -21,6 +22,7 @@ export class Monitor extends EventEmitter {
 
   stopMonitor() {
     if (this.currentInterval) {
+      logger.info('Resetting the monitor');
       clearInterval(this.currentInterval);
     }
   }
@@ -28,6 +30,7 @@ export class Monitor extends EventEmitter {
   startMonitor() {
     this.stopMonitor();
     let previousCpu = process.cpuUsage();
+    logger.info('Starting the monitor: ' + this.intervalMs);
 
     const details = { name: process.env.INIT_CWD };
     this.currentInterval = setInterval(() => {

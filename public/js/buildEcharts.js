@@ -149,3 +149,7 @@ function updateEcharts(data, memChart, cpuChart, index) {
     })),
   });
 }
+
+function resetEcharts() {
+  Object.keys(chartData).forEach(key => (chartData[key] = []));
+}

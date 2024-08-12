@@ -19,10 +19,18 @@ const monitor = new Monitor();
 
 const app = express();
 app.use(cors());
+app.use(express.json());
 app.use(express.static(join(__dirname, '..', 'public')));
 
 app.get('/', (req, res) => {
   res.sendFile(join(__dirname, '..', 'public', 'index.html'));
+});
+
+app.post('/interval', (req, res) => {
+  const { interval } = req.body;
+  logger.info('Setting the new interval: ' + interval);
+  monitor.setInterval(interval);
+  res.send();
 });
 
 const httpServer = http.createServer(app);

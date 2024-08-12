@@ -33,12 +33,50 @@
         width: 100%;
         height: 500px;
       }
+
+      .header-tools {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .interval-input {
+        border-radius: 10px;
+        border: 1px solid rgb(216, 211, 200);
+        background-color: inherit;
+        color: inherit;
+        padding: 7px;
+      }
+
+      .btn-reset {
+        margin-left: 30px;
+        background-color: inherit;
+        color: inherit;
+        padding: 7px;
+        border-radius: 10px;
+        border: 1px solid rgb(216, 211, 200);
+        cursor: pointer;
+      }
+      .btn-reset:hover {
+        background-color: rgb(61, 61, 61);
+      }
+      .btn-reset:active {
+        background-color: rgb(80, 80, 80);
+      }
     </style>
   </head>
   <body>
     <div class="container">
       <header>
-        <h1>The JS Resources Monitor UI</h1>
+        <div class="header-tools">
+          <h1>The JS Resources Monitor UI</h1>
+          <div class="params">
+            <label for="interval">Interval in milliseconds: </label>
+            <input type="number" name="interval" id="interval" min="100" class="interval-input" placeholder="interval in MS" />
+
+            <button type="button" id="reset" class="btn-reset">Reset Data</button>
+          </div>
+        </div>
       </header>
       <main>
         <div class="process-details">
@@ -75,6 +113,45 @@
         const cpuBox = document.getElementById('cpuBox');
         cpuBox.innerText = `CPU: ${mainCpu} Ms`;
       });
+
+      async function setInterval(interval) {
+        await fetch('/interval', {
+          headers: {
+            'Content-type': 'application/json',
+          },
+          method: 'POST',
+          body: JSON.stringify({ interval }),
+        });
+      }
+
+      window.onload = async function () {
+        const input = document.getElementById('interval');
+        input.addEventListener('keypress', async event => {
+          if (event.key === 'Enter') {
+            let value = input.value;
+            if (value < 100) {
+              value = 100;
+              input.value = value;
+            }
+
+            window.localStorage.setItem('interval', value);
+            await setInterval(value);
+          }
+        });
+
+        const reset = document.getElementById('reset');
+        reset.addEventListener('click', event => {
+          resetEcharts();
+          index = 0;
+        });
+
+        let interval = window.localStorage.getItem('interval');
+        if (!interval || Number(interval) < 100) {
+          interval = 1000;
+        }
+        input.value = interval;
+        await setInterval(interval);
+      };
     </script>
   </body>
 </html>
