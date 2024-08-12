@@ -32,7 +32,7 @@ export class Monitor extends EventEmitter {
     let previousCpu = process.cpuUsage();
     logger.info('Starting the monitor: ' + this.intervalMs);
 
-    const details = { name: process.env.INIT_CWD };
+    const details = { name: process.env.INIT_CWD || process.env.PWD };
     this.currentInterval = setInterval(() => {
       const { heapTotal, heapUsed, rss, arrayBuffers, external } = process.memoryUsage();
       previousCpu = process.cpuUsage(previousCpu);
