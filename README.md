@@ -29,18 +29,22 @@ A real-time monitoring tool for JavaScript applications that tracks CPU usage an
 ## Installation
 
 1. Install the `js-monitor-server` as dependency of your application:
+
    ```
    npm install js-monitor-server@latest
    ```
 
-
-
 ## Usage
 
-1. Import the library as dependency of your nodejs app. 
+1. Import the library as dependency of your ESM nodejs app. 
+
    ```javascript
-   import 'js-monitor-server'
+   import 'js-monitor-server';
    ```
+   For common js modules, use dynamic import:
+    ```javascript
+    import('js-monitor-server');
+    ```
 
 2. The default web server port is `9966`. You can change it by changing the `MONITOR_PORT` environment variable in the `.env` file.
 
