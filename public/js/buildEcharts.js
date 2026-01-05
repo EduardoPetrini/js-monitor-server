@@ -3,6 +3,7 @@ const colorIndex = ['#ffa600', '#ff6361', '#bc5090', '#58508d', '#003f5c'];
 const commonLineOptions = {
   smooth: true,
   type: 'line',
+  animation: false, // Critical for performance
   symbolSize: 0,
   endLabel: {
     show: true,
@@ -123,10 +124,10 @@ function buildProcessCharts(memEl, cpuEl) {
       });
       chartData.categories.push(index);
 
-      if (chartData.categories.length > 500) {
-        // Limit window size for performance
+      if (chartData.categories.length > 100) {
+        // Limit window size for performance (Reduced to 100)
         Object.keys(chartData).forEach(key => {
-          if (chartData[key].length > 500) chartData[key].shift();
+          if (chartData[key].length > 100) chartData[key].shift();
         });
       }
 
@@ -170,6 +171,10 @@ function buildProcessCharts(memEl, cpuEl) {
       Object.keys(chartData).forEach(key => (chartData[key] = []));
       memChart.setOption({ series: [], xAxis: { data: [] } });
       cpuChart.setOption({ series: [], xAxis: { data: [] } });
+    },
+    dispose() {
+      if (memChart && !memChart.isDisposed()) memChart.dispose();
+      if (cpuChart && !cpuChart.isDisposed()) cpuChart.dispose();
     },
   };
 }

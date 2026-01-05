@@ -205,6 +205,7 @@
 
           const key = currentPids.has(Number(pidStr)) ? Number(pidStr) : pidStr;
           if (!currentPids.has(key)) {
+            processInstances[pidStr].charts.dispose();
             processInstances[pidStr].card.remove();
             delete processInstances[pidStr];
           }
