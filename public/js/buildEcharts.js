@@ -12,7 +12,22 @@ const commonLineOptions = {
   },
 };
 
+const colorList = ['#ffa600', '#ff6361', '#bc5090', '#58508d', '#003f5c', '#488f31', '#de425b'];
+
+let lastColorIndex = -1;
+
+function getRandomColor() {
+  let index;
+  do {
+    index = Math.floor(Math.random() * colorList.length);
+  } while (index === lastColorIndex);
+
+  lastColorIndex = index;
+  return colorList[index];
+}
+
 function buildProcessCharts(memEl, cpuEl) {
+  const chartColor = getRandomColor();
   const memChart = echarts.init(memEl, 'dark');
   const cpuChart = echarts.init(cpuEl, 'dark');
 
@@ -123,10 +138,10 @@ function buildProcessCharts(memEl, cpuEl) {
           name: key,
           data: chartData[key],
           itemStyle: {
-            color: colorIndex[index % colorIndex.length],
+            color: chartColor,
           },
           areaStyle: {
-            color: colorIndex[index % colorIndex.length],
+            color: chartColor,
             opacity: 0.5,
           },
           ...commonLineOptions,
@@ -141,10 +156,10 @@ function buildProcessCharts(memEl, cpuEl) {
           name: key,
           data: chartData[key],
           itemStyle: {
-            color: colorIndex[index % colorIndex.length],
+            color: chartColor,
           },
           areaStyle: {
-            color: colorIndex[index % colorIndex.length],
+            color: chartColor,
             opacity: 0.5,
           },
           ...commonLineOptions,
