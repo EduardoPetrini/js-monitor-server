@@ -15,7 +15,7 @@ const PORT = process.env.MONITOR_PORT || 9966;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const monitor = new Monitor();
+const monitor = new Monitor(1000, process.env.MONITOR_MODE || 'local');
 
 const app = express();
 app.use(cors());

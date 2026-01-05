@@ -1,13 +1,8 @@
-const chartData = {
-  categories: [],
-};
-
 const colorIndex = ['#ffa600', '#ff6361', '#bc5090', '#58508d', '#003f5c'];
 
 const commonLineOptions = {
   smooth: true,
   type: 'line',
-
   symbolSize: 0,
   endLabel: {
     show: true,
@@ -17,9 +12,9 @@ const commonLineOptions = {
   },
 };
 
-function buildEcharts() {
-  const memChart = echarts.init(document.getElementById('memChart'), 'dark');
-  const cpuChart = echarts.init(document.getElementById('cpuChart'), 'dark');
+function buildProcessCharts(memEl, cpuEl) {
+  const memChart = echarts.init(memEl, 'dark');
+  const cpuChart = echarts.init(cpuEl, 'dark');
 
   const memOptions = {
     title: {
@@ -96,60 +91,70 @@ function buildEcharts() {
   memChart.setOption(memOptions);
   cpuChart.setOption(cpuOptions);
 
-  return { memChart, cpuChart };
-}
+  const chartData = {
+    categories: [],
+  };
 
-function updateEcharts(data, memChart, cpuChart, index) {
-  const { memory, cpu } = data;
-  Object.entries({ ...memory, ...cpu }).forEach(([key, value]) => {
-    if (!chartData[key]) {
-      chartData[key] = [];
-    }
-    chartData[key].push(value);
-  });
-  chartData.categories.push(index);
+  return {
+    memChart,
+    cpuChart,
+    update(data, index) {
+      const { memory, cpu } = data;
+      Object.entries({ ...memory, ...cpu }).forEach(([key, value]) => {
+        if (!chartData[key]) {
+          chartData[key] = [];
+        }
+        chartData[key].push(value);
+      });
+      chartData.categories.push(index);
 
-  if (index > 5000) {
-    Object.keys(chartData).forEach(key => chartData[key].shift());
-  }
+      if (chartData.categories.length > 500) {
+        // Limit window size for performance
+        Object.keys(chartData).forEach(key => {
+          if (chartData[key].length > 500) chartData[key].shift();
+        });
+      }
 
-  memChart.setOption({
-    xAxis: {
-      data: chartData.categories,
+      memChart.setOption({
+        xAxis: {
+          data: chartData.categories,
+        },
+        series: Object.keys(memory).map((key, index) => ({
+          name: key,
+          data: chartData[key],
+          itemStyle: {
+            color: colorIndex[index % colorIndex.length],
+          },
+          areaStyle: {
+            color: colorIndex[index % colorIndex.length],
+            opacity: 0.5,
+          },
+          ...commonLineOptions,
+        })),
+      });
+
+      cpuChart.setOption({
+        xAxis: {
+          data: chartData.categories,
+        },
+        series: Object.keys(cpu).map((key, index) => ({
+          name: key,
+          data: chartData[key],
+          itemStyle: {
+            color: colorIndex[index % colorIndex.length],
+          },
+          areaStyle: {
+            color: colorIndex[index % colorIndex.length],
+            opacity: 0.5,
+          },
+          ...commonLineOptions,
+        })),
+      });
     },
-    series: Object.keys(memory).map((key, index) => ({
-      name: key,
-      data: chartData[key],
-      itemStyle: {
-        color: colorIndex[index],
-      },
-      areaStyle: {
-        color: colorIndex[index],
-        opacity: 0.5,
-      },
-      ...commonLineOptions,
-    })),
-  });
-
-  cpuChart.setOption({
-    xAxis: {
-      data: chartData.categories,
+    reset() {
+      Object.keys(chartData).forEach(key => (chartData[key] = []));
+      memChart.setOption({ series: [], xAxis: { data: [] } });
+      cpuChart.setOption({ series: [], xAxis: { data: [] } });
     },
-    series: Object.keys(cpu).map((key, index) => ({
-      name: key,
-      data: chartData[key],
-      itemStyle: {
-        color: colorIndex[index],
-      },
-      areaStyle: {
-        color: colorIndex[index],
-        opacity: 0.5,
-      },
-      ...commonLineOptions,
-    })),
-  });
-}
-
-function resetEcharts() {
-  Object.keys(chartData).forEach(key => (chartData[key] = []));
+  };
 }

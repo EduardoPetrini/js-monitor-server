@@ -14,135 +14,241 @@
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         color: rgb(216, 211, 200);
         fill: rgb(216, 211, 200);
+        margin: 0;
+        padding: 0;
       }
       header {
-        padding: 10px;
-        margin-bottom: 10px;
-        border-bottom: 1px solid white;
+        padding: 20px;
+        background-color: rgb(45, 45, 45);
+        border-bottom: 1px solid rgb(60, 60, 60);
+        position: sticky;
+        top: 0;
+        z-index: 100;
       }
-      .process-details {
-        display: flex;
-        margin-bottom: 10px;
-      }
-      .span-details {
-        flex: 1;
-      }
-
-      #memChart,
-      #cpuChart {
-        width: 100%;
-        height: 500px;
-      }
-
       .header-tools {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      h1 {
+        margin: 0;
+        font-size: 1.5rem;
+      }
+
+      .container {
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .process-container {
+        background-color: rgb(40, 40, 40);
+        border: 1px solid rgb(60, 60, 60);
+        border-radius: 8px;
+        margin-bottom: 20px;
+        padding: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      }
+
+      .process-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 1px solid rgb(60, 60, 60);
+        padding-bottom: 10px;
+      }
+      .process-header h2 {
+        margin: 0;
+        font-size: 1.2rem;
+      }
+      .process-stats span {
+        margin-left: 15px;
+        font-weight: bold;
+        color: #ffa600;
+      }
+
+      .charts-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .mem-chart,
+      .cpu-chart {
+        width: 100%;
+        height: 350px;
       }
 
       .interval-input {
-        border-radius: 10px;
-        border: 1px solid rgb(216, 211, 200);
-        background-color: inherit;
-        color: inherit;
-        padding: 7px;
+        border-radius: 6px;
+        border: 1px solid rgb(100, 100, 100);
+        background-color: rgb(32, 32, 32);
+        color: white;
+        padding: 8px;
+        width: 100px;
       }
 
       .btn-reset {
-        margin-left: 30px;
-        background-color: inherit;
-        color: inherit;
-        padding: 7px;
-        border-radius: 10px;
-        border: 1px solid rgb(216, 211, 200);
+        margin-left: 15px;
+        background-color: rgb(60, 60, 60);
+        color: white;
+        padding: 8px 15px;
+        border-radius: 6px;
+        border: none;
         cursor: pointer;
+        transition: background 0.2s;
       }
       .btn-reset:hover {
-        background-color: rgb(61, 61, 61);
-      }
-      .btn-reset:active {
         background-color: rgb(80, 80, 80);
       }
     </style>
   </head>
   <body>
-    <div class="container">
-      <header>
-        <div class="header-tools">
-          <h1>The JS Resources Monitor UI</h1>
-          <div class="params">
-            <label for="interval">Interval in milliseconds: </label>
-            <input type="number" name="interval" id="interval" min="100" class="interval-input" placeholder="interval in MS" />
+    <header>
+      <div class="header-tools">
+        <h1>JS Resources Monitor</h1>
+        <div class="params">
+          <label for="interval">Interval (ms): </label>
+          <input type="number" name="interval" id="interval" min="100" class="interval-input" value="1000" />
+          <button type="button" id="reset" class="btn-reset">Reset Data</button>
+        </div>
+      </div>
+    </header>
 
-            <button type="button" id="reset" class="btn-reset">Reset Data</button>
-          </div>
-        </div>
-      </header>
-      <main>
-        <div class="process-details">
-          <span id="nameBox" class="span-details">Name</span>
-          <span id="cpuBox" class="span-details">CPU</span>
-          <span id="memBox" class="span-details">Memory</span>
-        </div>
-        <div class="process-memory-chart">
-          <div id="memChart"></div>
-        </div>
-        <div class="process-cpu-chart">
-          <div id="cpuChart"></div>
-        </div>
+    <div class="container">
+      <main id="processesWrapper">
+        <!-- Processes will be injected here -->
       </main>
     </div>
-    <script>
-      const { memChart, cpuChart } = buildEcharts();
 
-      let index = 0;
+    <script>
+      const processesWrapper = document.getElementById('processesWrapper');
+      const processInstances = {}; // pid -> { card, charts }
+      let globalIndex = 0;
 
       const socket = io();
+
       socket.on('update', data => {
-        index++;
-        updateEcharts(data, memChart, cpuChart, index);
+        globalIndex++;
 
-        const { mainCpu, mainMemory, details } = data;
+        // Data can be object (legacy local) or array (new unified)
+        // Adapt if it's a single object (legacy support or transitional)
+        let processes = Array.isArray(data) ? data : [data];
 
-        const nameBox = document.getElementById('nameBox');
-        nameBox.innerText = details.name;
+        // Legacy fix: if single object doesn't have pid, mock it?
+        // But our backend now sends array. So we assume array.
 
-        const memBox = document.getElementById('memBox');
-        memBox.innerText = `Memory: ${mainMemory} MB`;
+        const currentPids = new Set();
 
-        const cpuBox = document.getElementById('cpuBox');
-        cpuBox.innerText = `CPU: ${mainCpu} Ms`;
+        processes.forEach(proc => {
+          // proc might be just stats or have wrapper.
+          // Our backend sends: { pid, name, cpu, memory, mainCpu, mainMemory, ... }
+          // Some might lack pid if really legacy, but we ensured pid in backend.
+
+          const pid = proc.pid || 'local';
+          currentPids.add(pid);
+
+          if (!processInstances[pid]) {
+            const card = document.createElement('div');
+            card.className = 'process-container';
+            card.id = `proc-${pid}`;
+            card.innerHTML = `
+                    <div class="process-header">
+                        <h2>${proc.name || 'Unknown Process'} <small>(PID: ${pid})</small></h2>
+                        <div class="process-stats">
+                           <span class="stat-cpu">CPU: ...</span>
+                           <span class="stat-mem">Mem: ...</span>
+                        </div>
+                    </div>
+                    <div class="charts-container">
+                        <div class="mem-chart"></div>
+                        <div class="cpu-chart"></div>
+                    </div>
+                `;
+            processesWrapper.appendChild(card);
+
+            // Initialize charts
+            const memEl = card.querySelector('.mem-chart');
+            const cpuEl = card.querySelector('.cpu-chart');
+            const charts = buildProcessCharts(memEl, cpuEl);
+
+            processInstances[pid] = { card, charts };
+          }
+
+          const instance = processInstances[pid];
+
+          // Update Stats Text
+          // Logic for CPU unit display?
+          // If it's percentage (standalone), show %. If huge number (local legacy microseconds), maybe div by 1000?
+          // In backend we moved local to use 'mainCpu' = diff.user.
+          // Let's just display what we get.
+          const cpuVal = typeof proc.mainCpu === 'number' ? proc.mainCpu.toFixed(2) : proc.mainCpu;
+          instance.card.querySelector('.stat-cpu').innerText = `CPU: ${cpuVal}`;
+          instance.card.querySelector('.stat-mem').innerText = `Mem: ${proc.mainMemory} MB`;
+
+          // Update Charts
+          // buildEcharts expects { memory, cpu } object.
+          instance.charts.update(proc, globalIndex);
+        });
+
+        // Cleanup removed processes
+        Object.keys(processInstances).forEach(pidStr => {
+          // If pidStr is 'local' (legacy), keep it?
+          // 'local' vs number.
+          // currentPids has whatever we processed.
+          // Compare as strings to be safe or parse int.
+          // pid from backend is number or string. pidStr is string.
+          // If !currentPids.has(Number(pidStr)) AND !currentPids.has(pidStr)
+
+          const key = currentPids.has(Number(pidStr)) ? Number(pidStr) : pidStr;
+          if (!currentPids.has(key)) {
+            processInstances[pidStr].card.remove();
+            delete processInstances[pidStr];
+          }
+        });
       });
 
-      async function setInterval(interval) {
-        await fetch('/interval', {
-          headers: {
-            'Content-type': 'application/json',
-          },
-          method: 'POST',
-          body: JSON.stringify({ interval }),
-        });
+      async function setServerInterval(interval) {
+        try {
+          await fetch('/interval', {
+            headers: { 'Content-type': 'application/json' },
+            method: 'POST',
+            body: JSON.stringify({ interval }),
+          });
+        } catch (e) {
+          console.error(e);
+        }
       }
 
       window.onload = async function () {
         const input = document.getElementById('interval');
+
+        const updateInterval = async () => {
+          let value = input.value;
+          if (value < 100) {
+            value = 100;
+            input.value = value;
+          }
+          window.localStorage.setItem('interval', value);
+          await setServerInterval(value);
+        };
+
         input.addEventListener('keypress', async event => {
           if (event.key === 'Enter') {
-            let value = input.value;
-            if (value < 100) {
-              value = 100;
-              input.value = value;
-            }
-
-            window.localStorage.setItem('interval', value);
-            await setInterval(value);
+            await updateInterval();
           }
         });
 
+        // Also update on blur?
+        input.addEventListener('blur', updateInterval);
+
         const reset = document.getElementById('reset');
-        reset.addEventListener('click', event => {
-          resetEcharts();
-          index = 0;
+        reset.addEventListener('click', () => {
+          Object.values(processInstances).forEach(inst => inst.charts.reset());
+          globalIndex = 0;
         });
 
         let interval = window.localStorage.getItem('interval');
@@ -150,7 +256,7 @@
           interval = 1000;
         }
         input.value = interval;
-        await setInterval(interval);
+        await setServerInterval(interval);
       };
     </script>
   </body>
