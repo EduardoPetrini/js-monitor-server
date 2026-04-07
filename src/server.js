@@ -26,6 +26,10 @@ app.get('/', (req, res) => {
   res.sendFile(join(__dirname, '..', 'public', 'index.html'));
 });
 
+app.get('/mode', (req, res) => {
+  res.json({ mode: process.env.MONITOR_MODE || 'local' });
+});
+
 app.post('/interval', (req, res) => {
   const { interval } = req.body;
   logger.info('Setting the new interval: ' + interval);

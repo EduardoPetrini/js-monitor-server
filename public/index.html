@@ -126,8 +126,10 @@
 
     <script>
       const processesWrapper = document.getElementById('processesWrapper');
-      const processInstances = {}; // pid -> { card, charts }
+      let processInstances = {}; // pid -> { card, charts }
       let globalIndex = 0;
+      let monitorMode = 'local'; // Will be fetched from server
+      let consolidatedCharts = null; // For standalone mode
 
       const socket = io();
 
@@ -135,19 +137,64 @@
         globalIndex++;
 
         // Data can be object (legacy local) or array (new unified)
-        // Adapt if it's a single object (legacy support or transitional)
         let processes = Array.isArray(data) ? data : [data];
 
-        // Legacy fix: if single object doesn't have pid, mock it?
-        // But our backend now sends array. So we assume array.
+        if (monitorMode === 'standalone') {
+          // Standalone mode: use consolidated charts
+          handleStandaloneUpdate(processes);
+        } else {
+          // Local mode: use individual charts per process
+          handleLocalUpdate(processes);
+        }
+      });
 
+      function handleStandaloneUpdate(processes) {
+        // Create consolidated charts if they don't exist
+        if (!consolidatedCharts) {
+          // Clear any existing process instances
+          Object.values(processInstances).forEach(inst => {
+            if (inst.charts) inst.charts.dispose();
+            if (inst.card) inst.card.remove();
+          });
+          processInstances = {};
+
+          // Create a single container for consolidated charts
+          const container = document.createElement('div');
+          container.className = 'process-container';
+          container.id = 'consolidated-charts';
+          container.innerHTML = `
+            <div class="process-header">
+              <h2>All Node.js Processes</h2>
+              <div class="process-stats">
+                <span class="stat-count">Processes: ${processes.length}</span>
+              </div>
+            </div>
+            <div class="charts-container">
+              <div class="mem-chart"></div>
+              <div class="cpu-chart"></div>
+            </div>
+          `;
+          processesWrapper.appendChild(container);
+
+          const memEl = container.querySelector('.mem-chart');
+          const cpuEl = container.querySelector('.cpu-chart');
+          consolidatedCharts = buildConsolidatedCharts(memEl, cpuEl);
+        }
+
+        // Update process count
+        const countEl = document.querySelector('#consolidated-charts .stat-count');
+        if (countEl) {
+          countEl.innerText = `Processes: ${processes.length}`;
+        }
+
+        // Update consolidated charts with all processes
+        consolidatedCharts.update(processes, globalIndex);
+      }
+
+      function handleLocalUpdate(processes) {
         const currentPids = new Set();
 
         processes.forEach(proc => {
-          // proc might be just stats or have wrapper.
-          // Our backend sends: { pid, name, cpu, memory, mainCpu, mainMemory, ... }
-          // Some might lack pid if really legacy, but we ensured pid in backend.
-
           const pid = proc.pid || 'local';
           currentPids.add(pid);
 
@@ -156,18 +203,18 @@
             card.className = 'process-container';
             card.id = `proc-${pid}`;
             card.innerHTML = `
-                    <div class="process-header">
-                        <h2>${proc.name || 'Unknown Process'} <small>(PID: ${pid})</small></h2>
-                        <div class="process-stats">
-                           <span class="stat-cpu">CPU: ...</span>
-                           <span class="stat-mem">Mem: ...</span>
-                        </div>
-                    </div>
-                    <div class="charts-container">
-                        <div class="mem-chart"></div>
-                        <div class="cpu-chart"></div>
-                    </div>
-                `;
+              <div class="process-header">
+                <h2>${proc.name || 'Unknown Process'} <small>(PID: ${pid})</small></h2>
+                <div class="process-stats">
+                  <span class="stat-cpu">CPU: ...</span>
+                  <span class="stat-mem">Mem: ...</span>
+                </div>
+              </div>
+              <div class="charts-container">
+                <div class="mem-chart"></div>
+                <div class="cpu-chart"></div>
+              </div>
+            `;
             processesWrapper.appendChild(card);
 
             // Initialize charts
@@ -181,28 +228,16 @@
           const instance = processInstances[pid];
 
           // Update Stats Text
-          // Logic for CPU unit display?
-          // If it's percentage (standalone), show %. If huge number (local legacy microseconds), maybe div by 1000?
-          // In backend we moved local to use 'mainCpu' = diff.user.
-          // Let's just display what we get.
           const cpuVal = typeof proc.mainCpu === 'number' ? proc.mainCpu.toFixed(2) : proc.mainCpu;
           instance.card.querySelector('.stat-cpu').innerText = `CPU: ${cpuVal}`;
           instance.card.querySelector('.stat-mem').innerText = `Mem: ${proc.mainMemory} MB`;
 
           // Update Charts
-          // buildEcharts expects { memory, cpu } object.
           instance.charts.update(proc, globalIndex);
         });
 
         // Cleanup removed processes
         Object.keys(processInstances).forEach(pidStr => {
-          // If pidStr is 'local' (legacy), keep it?
-          // 'local' vs number.
-          // currentPids has whatever we processed.
-          // Compare as strings to be safe or parse int.
-          // pid from backend is number or string. pidStr is string.
-          // If !currentPids.has(Number(pidStr)) AND !currentPids.has(pidStr)
-
           const key = currentPids.has(Number(pidStr)) ? Number(pidStr) : pidStr;
           if (!currentPids.has(key)) {
             processInstances[pidStr].charts.dispose();
@@ -210,7 +245,7 @@
             delete processInstances[pidStr];
           }
         });
-      });
+      }
 
       async function setServerInterval(interval) {
         try {
@@ -224,7 +259,22 @@
         }
       }
 
+      async function fetchMode() {
+        try {
+          const response = await fetch('/mode');
+          const data = await response.json();
+          monitorMode = data.mode || 'local';
+          console.log('Monitor mode:', monitorMode);
+        } catch (e) {
+          console.error('Failed to fetch mode:', e);
+          monitorMode = 'local'; // Default to local
+        }
+      }
+
       window.onload = async function () {
+        // Fetch the monitor mode first
+        await fetchMode();
+
         const input = document.getElementById('interval');
 
         const updateInterval = async () => {
@@ -243,12 +293,15 @@
           }
         });
 
-        // Also update on blur?
         input.addEventListener('blur', updateInterval);
 
         const reset = document.getElementById('reset');
         reset.addEventListener('click', () => {
-          Object.values(processInstances).forEach(inst => inst.charts.reset());
+          if (monitorMode === 'standalone' && consolidatedCharts) {
+            consolidatedCharts.reset();
+          } else {
+            Object.values(processInstances).forEach(inst => inst.charts.reset());
+          }
           globalIndex = 0;
         });
 

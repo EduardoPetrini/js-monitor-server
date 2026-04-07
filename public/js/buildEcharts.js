@@ -178,3 +178,178 @@ function buildProcessCharts(memEl, cpuEl) {
     },
   };
 }
+
+// Consolidated charts for standalone mode - all processes on same charts
+function buildConsolidatedCharts(memEl, cpuEl) {
+  const memChart = echarts.init(memEl, 'dark');
+  const cpuChart = echarts.init(cpuEl, 'dark');
+
+  const memOptions = {
+    title: {
+      text: 'Memory (All Processes)',
+      align: 'center',
+      textStyle: {
+        color: 'rgb(216, 211, 200)',
+      },
+    },
+    backgroundColor: 'rgb(32, 32, 32)',
+    toolbox: {
+      feature: {
+        saveAsImage: {},
+      },
+    },
+    tooltip: {
+      trigger: 'axis',
+      show: true,
+      backgroundColor: 'rgba(32, 32, 32, 0.8)',
+      axisPointer: {
+        type: 'line',
+        axis: 'auto',
+      },
+      textStyle: {
+        color: 'rgb(216, 211, 200)',
+      },
+    },
+    legend: {
+      show: true,
+      type: 'scroll',
+    },
+    xAxis: {
+      data: [],
+    },
+    yAxis: {
+      name: 'MB',
+    },
+    series: [],
+  };
+
+  const cpuOptions = {
+    title: {
+      text: 'CPU (All Processes)',
+      align: 'center',
+      textStyle: {
+        color: 'rgb(216, 211, 200)',
+      },
+    },
+    backgroundColor: 'rgb(32, 32, 32)',
+    toolbox: {
+      feature: {
+        saveAsImage: {},
+      },
+    },
+    tooltip: {
+      trigger: 'axis',
+      show: true,
+      backgroundColor: 'rgba(32, 32, 32, 0.8)',
+      axisPointer: {
+        type: 'line',
+        axis: 'auto',
+      },
+      textStyle: {
+        color: 'rgb(216, 211, 200)',
+      },
+    },
+    legend: {
+      show: true,
+      type: 'scroll',
+    },
+    xAxis: {
+      data: [],
+    },
+    yAxis: {
+      name: '%',
+    },
+    series: [],
+  };
+
+  memChart.setOption(memOptions);
+  cpuChart.setOption(cpuOptions);
+
+  const chartData = {
+    categories: [],
+    processes: {}, // pid -> { name, memData: [], cpuData: [] }
+  };
+
+  return {
+    memChart,
+    cpuChart,
+    update(processes, index) {
+      // processes is an array of process data
+      chartData.categories.push(index);
+
+      // Update data for each process
+      processes.forEach(proc => {
+        const pid = proc.pid || 'local';
+
+        if (!chartData.processes[pid]) {
+          chartData.processes[pid] = {
+            name: proc.name || `PID: ${pid}`,
+            memData: [],
+            cpuData: [],
+          };
+        }
+
+        const procData = chartData.processes[pid];
+
+        // Add memory data (RSS)
+        procData.memData.push(proc.mainMemory || 0);
+
+        // Add CPU data (User CPU)
+        procData.cpuData.push(proc.mainCpu || 0);
+      });
+
+      // Limit window size for performance
+      if (chartData.categories.length > 100) {
+        chartData.categories.shift();
+        Object.values(chartData.processes).forEach(procData => {
+          if (procData.memData.length > 100) procData.memData.shift();
+          if (procData.cpuData.length > 100) procData.cpuData.shift();
+        });
+      }
+
+      // Build memory series
+      const memSeries = Object.entries(chartData.processes).map(([pid, procData], idx) => ({
+        name: procData.name,
+        data: procData.memData,
+        itemStyle: {
+          color: colorList[idx % colorList.length],
+        },
+        ...commonLineOptions,
+      }));
+
+      // Build CPU series
+      const cpuSeries = Object.entries(chartData.processes).map(([pid, procData], idx) => ({
+        name: procData.name,
+        data: procData.cpuData,
+        itemStyle: {
+          color: colorList[idx % colorList.length],
+        },
+        ...commonLineOptions,
+      }));
+
+      memChart.setOption({
+        xAxis: {
+          data: chartData.categories,
+        },
+        series: memSeries,
+      });
+
+      cpuChart.setOption({
+        xAxis: {
+          data: chartData.categories,
+        },
+        series: cpuSeries,
+      });
+    },
+    reset() {
+      chartData.categories = [];
+      chartData.processes = {};
+      memChart.setOption({ series: [], xAxis: { data: [] } });
+      cpuChart.setOption({ series: [], xAxis: { data: [] } });
+    },
+    dispose() {
+      if (memChart && !memChart.isDisposed()) memChart.dispose();
+      if (cpuChart && !cpuChart.isDisposed()) cpuChart.dispose();
+    },
+  };
+}
